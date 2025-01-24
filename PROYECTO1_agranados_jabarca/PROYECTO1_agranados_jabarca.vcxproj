@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ArchivedEvent.cpp" />
     <ClCompile Include="Client.cpp" />
     <ClCompile Include="ConfigEvent.cpp" />
     <ClCompile Include="DateProcessorTool.cpp" />
@@ -135,10 +136,13 @@
     <ClCompile Include="Segment.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArchivedEvent.h" />
     <ClInclude Include="Client.h" />
     <ClInclude Include="ConfigEvent.h" />
     <ClInclude Include="DateProcessorTool.h" />
     <ClInclude Include="EventController.h" />
+    <ClInclude Include="List.h" />
+    <ClInclude Include="Node.h" />
     <ClInclude Include="Segment.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

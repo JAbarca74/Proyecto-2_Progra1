@@ -16,8 +16,9 @@ void EventController::printConfigMenu()
 	cout << YELLOW << "CONFIGURACION DEL EVENTO " << RESET << endl << endl
 		<< BRIGHT_BLUE << "1. " << RESET << "Crear un nuevo evento." << endl << endl
 		<< BRIGHT_BLUE << "2. " << RESET << "Ver evento actual." << endl << endl
-		<< BRIGHT_BLUE << "3. " << RESET << "Finalizar evento." << endl << endl
-		<< BRIGHT_BLUE << "4. " << RESET << "Volver." << endl;
+		<< BRIGHT_BLUE << "3. " << RESET << "Editar segmento." << endl << endl
+		<< BRIGHT_BLUE << "4. " << RESET << "Finalizar evento." << endl << endl
+		<< BRIGHT_BLUE << "5. " << RESET << "Volver." << endl;
 }
 
 void EventController::printConfigPriceDiscountMenu()
@@ -80,10 +81,14 @@ void EventController::controlConfigMenuFlow()
 	}
 	else if (userOption == 3)
 	{
+		
+	}
+	else if (userOption == 4)
+	{
 		configEvent.deleteEvent();
 		system("cls");
 	}
-	else if (userOption == 4)
+	else if (userOption == 5)
 	{
 		cout << GREEN << "Usted sera regresado al menu principal" << RESET << endl << endl;
 		system("pause");
