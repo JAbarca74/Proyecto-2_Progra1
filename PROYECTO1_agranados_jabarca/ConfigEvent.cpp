@@ -39,22 +39,25 @@ int ConfigEvent::getSizeSegmentsSpace()
 int ConfigEvent::calculateTotalSeats()
 {
 	int totalSeats = 0;
-	for (int i = 0; i < sizeSegmentsSpace; i++)
-	{
-		totalSeats += (segmentsSpace[i].getNumberSeatingColumns() * segmentsSpace[i].getNumberSeatingRows());
+	Node<Segment>* currentNode = segmentsSpace.getHead();
+	while (currentNode != nullptr) {
+		Segment& segment = currentNode->getElement();
+		totalSeats += (segment.getNumberSeatingColumns() * segment.getNumberSeatingRows());
+		currentNode = currentNode->getNext();
 	}
 	return totalSeats;
 }
 
 void ConfigEvent::resizeSegmentsSpace(int newSize)
 {
-	Segment* newSegmentsSpace = new Segment[newSize];
-	for (int i = 0; i < sizeSegmentsSpace && i < newSize; i++)
-	{
-		newSegmentsSpace[i] = segmentsSpace[i];
+	while (segmentsSpace.getHead() != nullptr) {
+		segmentsSpace.deleteNode(0);
 	}
-	delete[] segmentsSpace;
-	segmentsSpace = newSegmentsSpace;
+
+	// Add new segments
+	for (int i = 0; i < newSize; i++) {
+		segmentsSpace.addNewNode(Segment());
+	}
 	sizeSegmentsSpace = newSize;
 }
 
@@ -82,15 +85,16 @@ void ConfigEvent::printExportCurrentEvent()
 
 void ConfigEvent::deleteEvent()
 {
-	if (segmentsSpace != nullptr) {
-		delete[] segmentsSpace;
-		segmentsSpace = nullptr;
+	while (segmentsSpace.getHead() != nullptr) {
+		segmentsSpace.deleteNode(0);
 	}
 
-	if (discountCodes != nullptr) {
-		delete[] discountCodes;
-		discountCodes = nullptr;
+	// Clear discountCodes
+	while (discountCodes.getHead() != nullptr) {
+		discountCodes.deleteNode(0);
 	}
+
+	// Reset event details
 	nameEvent = "-";
 	dateEvent = "-";
 	segmentsEvent = 0;
@@ -98,6 +102,7 @@ void ConfigEvent::deleteEvent()
 	codes = 0;
 	acountWithDiscount = 0;
 	discount = 0.0f;
+
 	cout << GREEN << "El evento ha sido eliminado completamente." << RESET << endl;
 	system("pause");
 }
@@ -105,26 +110,45 @@ void ConfigEvent::deleteEvent()
 void ConfigEvent::configureMatrixDimensions(int segmentNumber)
 {
 	segmentNumber--;
-	totalRows = segmentsSpace[segmentNumber].getNumberSeatingRows();
-	totalColumns = segmentsSpace[segmentNumber].getNumberSeatingColumns();
+	Node<Segment>* currentNode = segmentsSpace.getHead();
+	for (int i = 0; i < segmentNumber && currentNode != nullptr; i++) {
+		currentNode = currentNode->getNext();
+	}
+
+	if (currentNode != nullptr) {
+		totalRows = currentNode->getElement().getNumberSeatingRows();
+		totalColumns = currentNode->getElement().getNumberSeatingColumns();
+	}
 }
 
 void ConfigEvent::inicializateSeatsSpace(int segmentNumber)
 {
-	configureMatrixDimensions(segmentNumber);
-	availableSeats = new string * [totalRows];
-	for (int i = 0; i < totalRows; i++)
-	{
-		availableSeats[i] = new string[totalColumns];
+	while (availableSeats.getHead() != nullptr) {
+		delete availableSeats.getHead()->getElement();
+		availableSeats.deleteNode(0);
+	}
+
+	// Get segment dimensions
+	Segment* selectedSegment = getSegment(segmentNumber - 1);
+	totalRows = selectedSegment->getNumberSeatingRows();
+	totalColumns = selectedSegment->getNumberSeatingColumns();
+
+	// Create new available seats list
+	for (int i = 0; i < totalRows; i++) {
+		List<string>* rowList = new List<string>();
+		for (int j = 0; j < totalColumns; j++) {
+			rowList->addNewNode("");
+		}
+		availableSeats.addNewNode(rowList);
 	}
 }
 
 void ConfigEvent::createdSegmentSeats()
 {
-	for (int letter = 0; letter < totalRows; letter++)
-	{
-		for (int number = 0; number < totalColumns; number++)
-		{
+	Node<List<string>*>* rowNode = availableSeats.getHead();
+	for (int letter = 0; letter < totalRows; letter++) {
+		Node<string>* columnNode = rowNode->getElement()->getHead();
+		for (int number = 0; number < totalColumns; number++) {
 			string seatLabel;
 			if (letter < 26) {
 				seatLabel = string(1, 'A' + letter);
@@ -132,41 +156,59 @@ void ConfigEvent::createdSegmentSeats()
 			else {
 				char firstLetter = 'A' + (letter / 26) - 1;
 				char secondLetter = 'A' + (letter % 26);
-				seatLabel = string(1, +firstLetter) + string(1, +secondLetter);
+				seatLabel = string(1, firstLetter) + string(1, secondLetter);
 			}
-			availableSeats[letter][number] = seatLabel + to_string(number + 1);
+
+			columnNode->setElement(seatLabel + to_string(number + 1));
+			columnNode = columnNode->getNext();
 		}
+		rowNode = rowNode->getNext();
 	}
 }
 
 void ConfigEvent::printSegment()
 {
+	Node<Segment>* segmentNode = segmentsSpace.getHead();
 	for (int i = 0; i < sizeSegmentsSpace; i++)
 	{
-		for (int letter = 0; letter < segmentsSpace[i].getNumberSeatingRows(); letter++)
+		Segment& currentSegment = segmentNode->getElement();
+		int rows = currentSegment.getNumberSeatingRows();
+		int columns = currentSegment.getNumberSeatingColumns();
+
+		Node<List<string>*>* rowNode = availableSeats.getHead();
+		for (int letter = 0; letter < rows; letter++)
 		{
-			for (int number = 0; number < segmentsSpace[i].getNumberSeatingColumns(); number++)
+			Node<string>* columnNode = rowNode->getElement()->getHead();
+			for (int number = 0; number < columns; number++)
 			{
-				cout << "[ |_" << availableSeats[letter][number] << "_| ] ";
+				cout << "[ |_" << columnNode->getElement() << "_| ] ";
+				columnNode = columnNode->getNext();
 			}
 			cout << endl;
+			rowNode = rowNode->getNext();
 		}
 		cout << endl;
+
+		segmentNode = segmentNode->getNext();
 	}
 }
 
 void ConfigEvent::getReserveSeat(string& reserveSeats)
 {
+	Node<List<string>*>* rowNode = availableSeats.getHead();
 	for (int letter = 0; letter < totalRows; letter++)
 	{
+		Node<string>* columnNode = rowNode->getElement()->getHead();
 		for (int number = 0; number < totalColumns; number++)
 		{
-			if (availableSeats[letter][number] == reserveSeats)
+			if (columnNode->getElement() == reserveSeats)
 			{
-				availableSeats[letter][number] = "XX";
+				columnNode->setElement("XX");
 				return;
 			}
+			columnNode = columnNode->getNext();
 		}
+		rowNode = rowNode->getNext();
 	}
 }
 
@@ -177,36 +219,47 @@ void ConfigEvent::showAvaibleSeats()
 
 void ConfigEvent::createVectorDiscounts(int size)
 {
-	string* newVector = new string[size];
-	delete[] discountCodes;
-	discountCodes = newVector;
+	while (discountCodes.getHead() != nullptr) {
+		discountCodes.deleteNode(0);
+	}
+	for (int i = 0; i < size; i++) {
+		discountCodes.addNewNode("");
+	}
 }
+
 
 void ConfigEvent::generateDiscountCodes()
 {
 	int length = 6;
 	char alphanum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	string code = "";
 
-	for (int i = 0; i < acountWithDiscount; i++)
-	{
-		for (int j = 0; j < length; j++)
-		{
+	Node<string>* currentNode = discountCodes.getHead();
+	for (int i = 0; i < acountWithDiscount; i++) {
+		string code = "";
+		for (int j = 0; j < length; j++) {
 			int randomIndex = rand() % 36;
 			code += alphanum[randomIndex];
 		}
-		discountCodes[i] = code;
-		code = "";
+
+		if (currentNode) {
+			currentNode->setElement(code);
+			currentNode = currentNode->getNext();
+		}
 	}
 }
 
 void ConfigEvent::printCodes()
 {
+	Node<string>* currentNode = discountCodes.getHead();
 	cout << BRIGHT_CYAN << "-------------Codigos Disponibles-------------" << RESET << endl;
-	for (int i = 0; i < codes; i++)
-	{
-		cout << GREEN << discountCodes[i] << " " << "||" << " ";
+
+	int codeCount = 0;
+	while (currentNode != nullptr && codeCount < codes) {
+		cout << GREEN << currentNode->getElement() << " || ";
+		currentNode = currentNode->getNext();
+		codeCount++;
 	}
+
 	cout << '\n';
 	cout << YELLOW << "Elige la cantidad de codigos que necesites." << endl << LIGHT_PURPLE
 		<< "(Cada codigo es valido unicamente para una entrada.)" << RESET;
@@ -215,26 +268,31 @@ void ConfigEvent::printCodes()
 	system("cls");
 }
 
+
 void ConfigEvent::deleteCode(string aCode)
 {
-	string* newDiscountCodes = new string[codes - 1];
-	for (int i = 0; i < codes; i++)
-	{
-		if (aCode == discountCodes[i])
-		{
+	Node<string>* currentNode = discountCodes.getHead();
+	Node<string>* prevNode = nullptr;
+	int index = 0;
 
-			for (int j = 0, k = 0; j < codes; j++)
-			{
-				if (j != i) {
-					newDiscountCodes[k] = discountCodes[j];
-					k++;
-				}
+	while (currentNode != nullptr) {
+		if (currentNode->getElement() == aCode) {
+			// Remove the node
+			if (prevNode == nullptr) {
+				// If it's the first node
+				discountCodes.deleteNode(0);
 			}
+			else {
+				// Find the index and delete
+				discountCodes.deleteNode(index);
+			}
+			codes--;
+			return;
 		}
+		prevNode = currentNode;
+		currentNode = currentNode->getNext();
+		index++;
 	}
-	delete[] discountCodes;
-	discountCodes = newDiscountCodes;
-	codes--;
 }
 
 float ConfigEvent::applyCodeDiscount(Segment* spaceSegment)
@@ -389,27 +447,32 @@ void ConfigEvent::reserveSeatInSegment(int segmentIndex, const string& seatCode)
 
 void ConfigEvent::showStatusOfEvent()
 {
-	if (sizeSegmentsSpace <= 0)
-	{
+	if (sizeSegmentsSpace <= 0) {
 		cout << RED << "ERROR. Configure un evento. " << RESET << endl << endl;
+		return;
 	}
-	else {
-		for (int i = 0; i < sizeSegmentsSpace; i++)
-		{
-			if (isFullEvent())
-			{
-				cout << RED << "EL EVENTO ESTA LLENO" << RESET << endl << endl;
-				return;
-			}
-			cout << "Segmento " << i + 1 << ":\n";
-			segmentsSpace[i].printSeats();
-		}
+
+	if (isFullEvent()) {
+		cout << RED << "EL EVENTO ESTA LLENO" << RESET << endl << endl;
+		return;
+	}
+
+	Node<Segment>* currentNode = segmentsSpace.getHead();
+	for (int i = 0; currentNode != nullptr; i++) {
+		cout << "Segmento " << i + 1 << ":\n";
+		currentNode->getElement().printSeats();
+		currentNode = currentNode->getNext();
 	}
 }
 
 Segment* ConfigEvent::getSegment(int pos)
 {
-	return &segmentsSpace[pos];
+	Node<Segment>* currentNode = segmentsSpace.getHead();
+	for (int i = 0; i < pos; i++) {
+		if (currentNode == nullptr) return nullptr;
+		currentNode = currentNode->getNext();
+	}
+	return &(currentNode->getElement());
 }
 
 bool ConfigEvent::isSegmentExist()
@@ -430,11 +493,16 @@ bool ConfigEvent::isDiscountNumExist()
 	return true;
 }
 
-bool ConfigEvent::isCodeExist(string code) {
-	for (int i = 0; i < codes; i++) {
-		if (code == discountCodes[i]) {
+bool ConfigEvent::isCodeExist(string code) 
+{
+	Node<string>* currentNode = discountCodes.getHead();
+	while (currentNode != nullptr) 
+	{
+		if (currentNode->getElement() == code) 
+		{
 			return true;
 		}
+		currentNode = currentNode->getNext();
 	}
 	return false;
 }
@@ -456,26 +524,14 @@ bool ConfigEvent::isSeatAvailable(string& reserveSeats)
 
 bool ConfigEvent::isFullEvent()
 {
-	for (int i = 0; i < sizeSegmentsSpace; i++)
-	{
-		if (segmentsSpace[i].isFullTheEvent())
-		{
+	Node<Segment>* currentNode = segmentsSpace.getHead();
+	while (currentNode != nullptr) {
+		if (!currentNode->getElement().isFullTheEvent()) {
 			return false;
-			break;
 		}
+		currentNode = currentNode->getNext();
 	}
 	return true;
-}
-
-void ConfigEvent::verifyIntegerNumber()
-{
-	while (true)
-	{
-		if (cin.fail())
-		{
-
-		}
-	}
 }
 
 void ConfigEvent::captureEventData(int& temporalRows, int& temporalColumns, float temporalPrice)
@@ -484,48 +540,56 @@ void ConfigEvent::captureEventData(int& temporalRows, int& temporalColumns, floa
 	cout << endl << BRIGHT_WHITE << "Ingrese el nombre del evento: " << RESET;
 	cin.ignore();
 	getline(cin, nameEvent);
-	while (nameEvent.empty())
-	{
+	while (nameEvent.empty()) {
 		cout << RED << "ERROR. " << RESET << "Ingrese un nombre verdadero de evento: ";
 		getline(cin, nameEvent);
 	}
+
 	cout << BRIGHT_WHITE << "Ingrese la fecha del evento (formato DD/MM/YYYY): " << RESET;
 	getline(cin, dateEvent);
-	while (dateEvent.empty())
-	{
+	while (dateEvent.empty()) {
 		cout << RED << "ERROR. " << RESET << "Ingrese una fecha verdadera de evento: ";
 		getline(cin, dateEvent);
 	}
 	dateProcessorTool.confirmDateEvent(dateEvent);
 	printSeparatorIdeas();
+
 	cout << BRIGHT_WHITE << "Ingrese el numero de segmentos (mayor a 0): " << RESET;
 	cin >> aux;
-	segmentsEvent = static_cast <int>(aux);
+	segmentsEvent = static_cast<int>(aux);
 	printSeparatorIdeas();
 	confirmSegment();
 	resizeSegmentsSpace(segmentsEvent);
+
 	cout << BRIGHT_WHITE << "Ingrese la cantidad de entradas que desea que posean descuento: " << RESET;
 	cin >> aux;
-	acountWithDiscount = static_cast <int>(aux);
+	acountWithDiscount = static_cast<int>(aux);
 	codes = acountWithDiscount;
 	createVectorDiscounts(acountWithDiscount);
 	generateDiscountCodes();
+
 	cout << BRIGHT_WHITE << "Ingrese el porcentaje de descuento deseado: " << RESET;
 	cin >> aux;
-	discount = static_cast <int>(aux);
+	discount = static_cast<float>(aux);
 	printSeparatorIdeas();
-	for (int i = 0; i < sizeSegmentsSpace; i++)
-	{
+
+	for (int i = 0; i < sizeSegmentsSpace; i++) {
 		cout << BRIGHT_WHITE << "Ingrese el numero de filas del segmento " << RESET << i + 1 << ": ";
 		cin >> aux;
-		temporalRows = static_cast <int>(aux);
+		temporalRows = static_cast<int>(aux);
 		cout << BRIGHT_WHITE << "Ingrese el numero de columnas del segmento " << RESET << i + 1 << ": ";
 		cin >> aux;
-		temporalColumns = static_cast <int>(aux);
+		temporalColumns = static_cast<int>(aux);
 		cout << BRIGHT_WHITE << "Ingrese el precio de cada asiento del segmento " << RESET << i + 1 << ": ";
 		cin >> temporalPrice;
 		printSeparatorIdeas();
-		segmentsSpace[i].updateData(temporalRows, temporalColumns, temporalPrice);
+
+		// Update segment data
+		Node<Segment>* currentNode = segmentsSpace.getHead();
+		for (int j = 0; j < i; j++) {
+			currentNode = currentNode->getNext();
+		}
+		currentNode->getElement().updateData(temporalRows, temporalColumns, temporalPrice);
 	}
 	freeSeats = calculateTotalSeats();
 }
@@ -552,23 +616,32 @@ void ConfigEvent::printInvoice(int seatsPurchased, float anApplyDiscount, float 
 
 void ConfigEvent::aboutUs()
 {
-	cout << BRIGHT_CYAN << "\t\t\t\t\t       ABOUT US:\n";
-	cout << GREEN << "\t\t\t\t    _    ____  ____  ___    _    _   _ \n";
-	cout << "\t\t\t\t   / \\  |  _ \\|  _ \\|_ _|  / \\  | \\ | |\n";
-	cout << "\t\t\t\t  / _ \\ | | | | |_) || |  / _ \\ |  \\| |\n";
-	cout << "\t\t\t\t / ___ \\| |_| |  _ < | | / ___ \\| |\\  |\n";
-	cout << "\t\t\t\t/_/   \\_\\____/|_| \\_\\___/_/   \\_\\_| \\_|\n";
-	cout << "\n";
-	cout << YELLOW "\t\t\t\t\t\t__   __\n";
-	cout << "\t\t\t\t\t\t\\ \\ / /\n";
-	cout << "\t\t\t\t\t\t \\ V / \n";
-	cout << "\t\t\t\t\t\t  | |  \n";
-	cout << "\t\t\t\t\t\t  |_|  \n";
-	cout << "\n";
-	cout << RED << "\t\t\t\t       _ _____ _____ _____ ______  \n";
-	cout << "\t\t\t\t      | | ____|  ___|  ___|  ___/ \n";
-	cout << "\t\t\t\t   _  | |  _| | |_  | |_  |  _|   \n";
-	cout << "\t\t\t\t  | |_| | |___|  _| |  _| | |___  \n";
-	cout << "\t\t\t\t   \\___/|_____|_|   |_|   |_____|\n" << "\n";
-	cout << BRIGHT_CYAN << "\t\t\t\t     Aspirantes a Ing.Sistemas." << RESET;
+	cout << BRIGHT_CYAN << "\t\t\t\t\t       ABOUT US:" << endl
+	<< GREEN << "\t\t\t\t    _    ____  ____  ___    _    _   _ " << endl
+	<< "\t\t\t\t   / \\  |  _ \\|  _ \\|_ _|  / \\  | \\ | |" << endl
+	<< "\t\t\t\t  / _ \\ | | | | |_) || |  / _ \\ |  \\| |" << endl
+	<< "\t\t\t\t / ___ \\| |_| |  _ < | | / ___ \\| |\\  |" << endl
+    << "\t\t\t\t/_/   \\_\\____/|_| \\_\\___/_/   \\_\\_| \\_|" << endl
+    << endl
+	<< YELLOW "\t\t\t\t\t\t__   __" << endl
+	<< "\t\t\t\t\t\t\\ \\ / /" << endl
+	<< "\t\t\t\t\t\t \\ V / " << endl
+	<< "\t\t\t\t\t\t  | |  " << endl
+	<< "\t\t\t\t\t\t  |_|  " << endl
+	<< endl
+	<< RED << "\t\t\t\t       _ _____ _____ _____ ______  " << endl
+	<< "\t\t\t\t      | | ____|  ___|  ___|  ___/ " << endl
+	<< "\t\t\t\t   _  | |  _| | |_  | |_  |  _|   " << endl
+	<< "\t\t\t\t  | |_| | |___|  _| |  _| | |___  " << endl
+	<< "\t\t\t\t   \\___/|_____|_|   |_|   |_____|" << "" << endl
+	<< BRIGHT_CYAN << "\t\t\t\t     Aspirantes a Ing.Sistemas." << RESET;
+}
+
+ConfigEvent::~ConfigEvent()
+{
+	Node<List<string>*>* currentRowNode = availableSeats.getHead();
+	while (currentRowNode != nullptr) {
+		delete currentRowNode->getElement();
+		currentRowNode = currentRowNode->getNext();
+	}
 }

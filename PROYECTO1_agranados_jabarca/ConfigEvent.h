@@ -29,10 +29,10 @@ private:
 	string dateEvent;
 	string reserveSeats;
 	string separatorIdeas;
-	string* discountCodes;
-	string** availableSeats;
+	List<string> discountCodes;
+	List<List<string>*> availableSeats;
 	Segment segment;
-	Segment* segmentsSpace;
+	List<Segment> segmentsSpace;
 	Client client;
 	DateProcessorTool dateProcessorTool;
 
@@ -73,8 +73,8 @@ public:
 	bool isCodeExist(string code);
 	bool isSeatAvailable(string& reserveSeats);
 	bool isFullEvent();
-	void verifyIntegerNumber();
 	void captureEventData(int& temporalRows, int& temporalColumns, float temporalPrice);
 	void printInvoice(int seatsPurchased, float anApplyDiscount, float aTotalPrice, float anFinalPrice);
 	void aboutUs();
+	~ConfigEvent();
 };
