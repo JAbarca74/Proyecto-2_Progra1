@@ -20,89 +20,95 @@ float Segment::getPrice()
     return price;
 }
 
-void Segment::updateData(int numberSeatingRows_, int numberSeatingColumns_, float price_)
+string Segment::updateData(int numberSeatingRows_, int numberSeatingColumns_, float price_)
 {
     numberSeatingRows = numberSeatingRows_;
     numberSeatingColumns = numberSeatingColumns_;
     price = price_;
 
-    seats = new string * [numberSeatingRows];
-    for (int letter = 0; letter < numberSeatingRows; letter++)
-    {
-        seats[letter] = new string[numberSeatingColumns];
-        for (int number = 0; number < numberSeatingColumns; number++)
-        {
-            string seatLabel;
-            if (letter < 26) {
-                seatLabel = string(1, 'A' + letter);
-            }
-            else {
-                char firstLetter = 'A' + (letter / 26) - 1;
-                char secondLetter = 'A' + (letter % 26);
-                seatLabel = string(1, firstLetter) + string(1, secondLetter);
-            }
-            seats[letter][number] = seatLabel + to_string(number + 1);
-        }
+    // Clear existing seats
+    while (seats.getHead() != nullptr) {
+        seats.deleteNode(0);
     }
+
+    // Generate seat labels and add to list
+    for (int position = 0; position < numberSeatingRows * numberSeatingColumns; position++) {
+        int letter = position / numberSeatingColumns;
+        int number = position % numberSeatingColumns;
+
+        string seatLabel;
+        if (letter < 26) {
+            seatLabel = string(1, 'A' + letter);
+        }
+        else {
+            char firstLetter = 'A' + (letter / 26) - 1;
+            char secondLetter = 'A' + (letter % 26);
+            seatLabel = string(1, firstLetter) + string(1, secondLetter);
+        }
+
+        seats.addNewNode(seatLabel + to_string(number + 1));
+    }
+
+    return "Seats initialized";
 }
 
 void Segment::printSeats() {
-    for (int i = 0; i < numberSeatingRows; i++)
-    {
-        for (int j = 0; j < numberSeatingColumns; j++)
-        {
-            if (seats[i][j] != "XX")
-            {
-                cout << GREEN << "[ |_" << seats[i][j] << "_| ] " << RESET;
-            }
-            else {
-                cout << RED << "[ |_" << seats[i][j] << "_| ] " << RESET;
-            }
+
+    Node<string>* currentNode = seats.getHead();
+    int count = 0;
+
+    while (currentNode != nullptr) {
+        string seatLabel = currentNode->getElement();
+
+        if (seatLabel != "XX") {
+            cout << GREEN << "[ |_" << seatLabel << "_| ] " << RESET;
         }
-        cout << endl;
+        else {
+            cout << RED << "[ |_" << seatLabel << "_| ] " << RESET;
+        }
+
+        count++;
+        if (count % numberSeatingColumns == 0) {
+            cout << endl;
+        }
+
+        currentNode = currentNode->getNext();
     }
     cout << endl;
 }
 
 bool Segment::reserveSeat(string seatCode)
 {
-    for (int i = 0; i < numberSeatingRows; i++)
-    {
-        for (int j = 0; j < numberSeatingColumns; j++)
-        {
-            if (seats[i][j] == seatCode) {
-                seats[i][j] = "XX";
-                return true;
-            }
+    Node<string>* currentNode = seats.getHead();
+    int position = 0;
+
+    while (currentNode != nullptr) {
+        if (currentNode->getElement() == seatCode) {
+            currentNode->setElement("XX");
+            return true;
         }
+        currentNode = currentNode->getNext();
+        position++;
     }
     return false;
 }
+
 
 bool Segment::isFullTheEvent()
 {
-    for (int i = 0; i < numberSeatingRows; i++)
-    {
-        for (int j = 0; j < numberSeatingColumns; j++)
-        {
-            if (seats[i][j] != "XX")
-            {
-                return true;
-            }
+    Node<string>* currentNode = seats.getHead();
+
+    while (currentNode != nullptr) {
+        if (currentNode->getElement() != "XX") {
+            return false;
         }
+        currentNode = currentNode->getNext();
     }
-    return false;
+    return true;
 }
 
-void Segment::clearSeats()
-{
-    if (seats != nullptr)
-    {
-        for (int i = 0; i < numberSeatingRows; i++)
-        {
-            delete[] seats[i];
-        }
-        delete[] seats;
-        seats = nullptr;
+void Segment::clearSeats() {
+    while (seats.getHead() != nullptr) {
+        seats.deleteNode(0);
     }
 }
