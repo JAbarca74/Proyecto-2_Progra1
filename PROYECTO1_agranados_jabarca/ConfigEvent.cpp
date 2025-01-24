@@ -252,7 +252,6 @@ void ConfigEvent::processPurchase(int seatsPurchased, string& numberReserveSeats
 	float temporalTotal = 0.0f, temporalDiscount = 0.0f, aux = 0.0f;
 
 	client.collectAllInformation();
-	cout << freeSeats;;
 	do {
 		cout << endl << "Digite la cantidad de asientos que desea comprar: ";
 		cin >> aux;
