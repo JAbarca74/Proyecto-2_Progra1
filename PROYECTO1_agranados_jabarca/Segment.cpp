@@ -93,7 +93,6 @@ bool Segment::reserveSeat(string seatCode)
     return false;
 }
 
-
 bool Segment::isFullTheEvent()
 {
     Node<string>* currentNode = seats.getHead();
@@ -111,4 +110,18 @@ void Segment::clearSeats() {
     while (seats.getHead() != nullptr) {
         seats.deleteNode(0);
     }
+}
+
+bool Segment::isSeatAvailable(string& reserveSeats)
+{
+    Node<string>* currentNode = seats.getHead();
+    while (currentNode != nullptr) {
+        if (currentNode->getElement() == reserveSeats) {
+            // Seat exists and is available (not marked as "XX")
+            return currentNode->getElement() != "XX";
+        }
+        currentNode = currentNode->getNext();
+    }
+    // Seat not found in this segment
+    return false;
 }

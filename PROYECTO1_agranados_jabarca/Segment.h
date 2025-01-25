@@ -15,8 +15,7 @@ private:
     List<string> seats;
 
 public:
-    Segment() : numberSeatingRows(0), numberSeatingColumns(0), price(0.0) {}
-
+    Segment() : numberSeatingRows(0), numberSeatingColumns(0), price(0.0) {};
     int getNumberSeatingRows();
     int getNumberSeatingColumns();
     float getPrice(); 
@@ -25,7 +24,6 @@ public:
     bool reserveSeat(string seatCode);
     bool isFullTheEvent(); 
     void clearSeats();
+    bool isSeatAvailable(string& reserveSeats);
     ~Segment();
-
-    
 };

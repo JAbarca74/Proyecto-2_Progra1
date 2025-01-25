@@ -195,20 +195,14 @@ void ConfigEvent::printSegment()
 
 void ConfigEvent::getReserveSeat(string& reserveSeats)
 {
-	Node<List<string>*>* rowNode = availableSeats.getHead();
-	for (int letter = 0; letter < totalRows; letter++)
 	{
-		Node<string>* columnNode = rowNode->getElement()->getHead();
-		for (int number = 0; number < totalColumns; number++)
-		{
-			if (columnNode->getElement() == reserveSeats)
-			{
-				columnNode->setElement("XX");
+		Node<Segment>* segmentNode = segmentsSpace.getHead();
+		while (segmentNode != nullptr) {
+			if (segmentNode->getElement().reserveSeat(reserveSeats)) {
 				return;
 			}
-			columnNode = columnNode->getNext();
+			segmentNode = segmentNode->getNext();
 		}
-		rowNode = rowNode->getNext();
 	}
 }
 
@@ -226,7 +220,6 @@ void ConfigEvent::createVectorDiscounts(int size)
 		discountCodes.addNewNode("");
 	}
 }
-
 
 void ConfigEvent::generateDiscountCodes()
 {
@@ -379,7 +372,7 @@ void ConfigEvent::processPurchase(int seatsPurchased, string& numberReserveSeats
 			cout << "Introduce el asiento (por ejemplo, A1): ";
 			cin >> seleccionAsiento;
 
-			asientoReservado = segmentsSpace[temporalSegment - 1].reserveSeat(seleccionAsiento);
+			asientoReservado = getSegment(temporalSegment - 1)->reserveSeat(seleccionAsiento);
 			if (!asientoReservado)
 			{
 				cout << RED << "El asiento " << seleccionAsiento << " no existe o ya esta reservado." << RESET << endl;
@@ -435,7 +428,8 @@ void ConfigEvent::reserveSeatInSegment(int segmentIndex, const string& seatCode)
 		cout << "Segmento invalido." << endl;
 		return;
 	}
-	if (segmentsSpace[segmentIndex].reserveSeat(seatCode))
+	Segment* segment = getSegment(segmentIndex);
+	if (segment->reserveSeat(seatCode))
 	{
 		cout << "Asiento " << seatCode << " reservado correctamente." << endl;
 	}
@@ -509,15 +503,12 @@ bool ConfigEvent::isCodeExist(string code)
 
 bool ConfigEvent::isSeatAvailable(string& reserveSeats)
 {
-	for (int letter = 0; letter < totalRows; letter++)
-	{
-		for (int number = 0; number < totalColumns; number++)
-		{
-			if (availableSeats[letter][number] == reserveSeats)
-			{
-				return true;
-			}
+	Node<Segment>* segmentNode = segmentsSpace.getHead();
+	while (segmentNode != nullptr) {
+		if (segmentNode->getElement().isSeatAvailable(reserveSeats)) {
+			return true;
 		}
+		segmentNode = segmentNode->getNext();
 	}
 	return false;
 }
@@ -637,11 +628,11 @@ void ConfigEvent::aboutUs()
 	<< BRIGHT_CYAN << "\t\t\t\t     Aspirantes a Ing.Sistemas." << RESET;
 }
 
-ConfigEvent::~ConfigEvent()
+/*ConfigEvent::~ConfigEvent()
 {
 	Node<List<string>*>* currentRowNode = availableSeats.getHead();
 	while (currentRowNode != nullptr) {
 		delete currentRowNode->getElement();
 		currentRowNode = currentRowNode->getNext();
 	}
-}
+}*/

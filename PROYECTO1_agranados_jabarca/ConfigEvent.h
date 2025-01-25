@@ -76,5 +76,5 @@ public:
 	void captureEventData(int& temporalRows, int& temporalColumns, float temporalPrice);
 	void printInvoice(int seatsPurchased, float anApplyDiscount, float aTotalPrice, float anFinalPrice);
 	void aboutUs();
-	~ConfigEvent();
+	//~ConfigEvent();
 };
